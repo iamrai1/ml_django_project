@@ -11,8 +11,9 @@ from email.mime.image import MIMEImage
 from email.mime.text import MIMEText
 import cv2
 import os
-# Create your views here.
-from google_images_download import google_images_download  # importing the library
+from . import api
+from . model import classify as cs
+
 
 def sendmail(reciever, mes):
     sender = 'nahi.khojoge@gmail.com'  # place your email id here
@@ -49,17 +50,23 @@ def sendmail(reciever, mes):
 
 
 def index(request):
+    import subprocess
     form = data(request.POST or None, request.FILES)
     if form.is_valid():
         new_data = form.save(commit=False)
-        images_name = new_data.name
-        response = google_images_download.googleimagesdownload()  # class instantiation
-        arguments = {"keywords": images_name, "limit": 1,
-                     "print_urls": False}  # creating list of arguments
-        paths = response.download(arguments)  # passing the arguments to the function
-        sendmail(new_data.email, '/downloads')
-         # printing absolute paths of the downloaded images
+        image_predict = new_data.upload_your_image
+        print(str(image_predict))
         new_data.save()
+        result = cs.prediction("myapp/model/new_model", "myapp/model/labelbin", "D:/django_project/django_project/media/"+str(image_predict))
+        min_range = new_data.min_range
+        maax_range = new_data.max_range
 
+        print(result)
+        api.search(result)
+        new_data.delete()
+        os.system("RD /S /Q D:\django_project\django_project\media")
     context = {'form': form}
     return render(request, 'index.html', context)
+
+
+
